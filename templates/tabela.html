@@ -1,0 +1,13 @@
+ {% for investimento in vetor_tabela %}
+                            <tr>
+
+                              <td>{{ investimento.investimento.nome }} </td>
+                              <td><a href="{{ investimento.investimento.tipo }}">{{ investimento.investimento.tipo }}</a> </td>
+                              <td>
+                                  {{ investimento.valor }} R$ </td>
+
+                              <td>{{ investimento.porcentagem }} % </td>
+
+                                  <td>{{ investimento.investimento.data_criacao }} </td>
+</tr>
+                {% endfor %}
