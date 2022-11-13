@@ -1,10 +1,11 @@
+from django.http import HttpResponse
 from django.shortcuts import render
 
 # Create your views here.
 from django.shortcuts import render
 
-from backend.models import Investimento, InvestimentoRendimento, TipoInvestimento
-
+from backend.models import Investimento, InvestimentoRendimento, TipoInvestimento, CalculoFuturo, VariavelMes, \
+    VariavelImposto
 
 
 def somar_investimento(usuario,tipo):
@@ -154,3 +155,48 @@ def tipo_de_investimento(request,tipo):
     dados = {"investimentos": Investimento.objects.filter(ativo=True,tipo__nome=tipo,usuario=usuario),"soma":soma,"titulo":"Gráfico sem rendimentos/perdas",
              'pagina':2,'vetor_tabela':vetor_investimentos}
     return render(request, "frontend/modelo.html",dados)
+
+
+def CALCULOFUTURO(request):
+
+    meses = 12
+    id_objeto = 1
+    resposta,variavel,bonus,total,calculo = calcular_futuro_objeto(id_objeto)
+    print(resposta)
+    total_inicial = total
+    total = resposta  + total
+    for simulacao in range(meses-1):
+        resposta = calcular_futuro_imaginado(total,variavel,bonus )
+        total = resposta + total
+        print(total)
+
+    lucro = total - total_inicial
+    print(lucro)
+    #ainda falta calcular imposto
+    variaveis = VariavelImposto.objects.filter(tipo=calculo.variavel)
+    dias = 12* (30.4167)
+    for pegar_imposto in variaveis:
+
+        if dias > pegar_imposto.dias:
+            imposto = pegar_imposto.valor
+    print(imposto)
+
+
+    lucro = lucro-float(lucro) * (float(imposto) / 100)
+
+    return HttpResponse(str(total_inicial + lucro) + "<p>Lucro: " + str(lucro) +"</p> ")
+
+
+def calcular_futuro_objeto(id):
+    calculo = CalculoFuturo.objects.get(id=id)
+
+    total = float(calculo.investimento.valor_atual)
+    variavel = float(VariavelMes.objects.get(id=calculo.variavel.id).valor) / 12 / 100
+    bonus = float(calculo.bonus)
+
+    resposta = round(total * variavel * bonus, 2)
+    return resposta,variavel,bonus,total,calculo
+
+def calcular_futuro_imaginado(total,variavel,bonus):
+    resposta = round(total * variavel * bonus, 2)
+    return resposta

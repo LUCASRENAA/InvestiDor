@@ -14,6 +14,7 @@ class TipoInvestimento(models.Model):
         return (f'{self.nome}')
 
 
+
 class Investimento(models.Model):
     #cdb,tesouro selic
     nome = models.CharField(max_length=50)
@@ -45,6 +46,7 @@ class TipoRendimento(models.Model):
     nome = models.CharField(max_length=50)
     def __str__(self):
         return (f'{self.nome}')
+
 class InvestimentoRendimento(models.Model):
     investimento = models.ForeignKey(Investimento, models.CASCADE)
     valor =  models.DecimalField(max_digits=10, decimal_places=2,default=0)
@@ -64,7 +66,16 @@ class VariavelMes(models.Model):
 
 
     def __str__(self):
-        return (f'{self.tipo.nome}')
+        return (f'{self.tipo.nome} {self.data_criacao} + {self.valor}%')
+
+class VariavelImposto(models.Model):
+    tipo = models.ForeignKey(Variavel, models.CASCADE)
+    dias = models.IntegerField()
+    valor =  models.DecimalField(max_digits=10, decimal_places=6,default=0)
+
+
+    def __str__(self):
+        return (f'{self.tipo.nome} {self.valor}%')
 
 class CalculoFuturo(models.Model):
     investimento = models.ForeignKey(Investimento, models.CASCADE)
@@ -72,3 +83,13 @@ class CalculoFuturo(models.Model):
     bonus =  models.DecimalField(max_digits=10, decimal_places=6,default=0)
     def __str__(self):
         return (f'{self.investimento.nome}')
+
+
+class TipoInvestimentoSemIdeiaDeNome(models.Model):
+    #renda_fixa
+    nome = models.CharField(max_length=50)
+    tipo = models.ForeignKey(TipoInvestimento, models.CASCADE)
+    variavel = models.ForeignKey(Variavel, models.CASCADE)
+
+    def __str__(self):
+        return (f'{self.nome}')

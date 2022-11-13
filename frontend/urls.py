@@ -9,5 +9,6 @@ urlpatterns = [
     path("rendimentos/", views.rendimentos),
     path("tipo/", views.rendimento_por_tipo),
     path("tipo2/", views.rendimento_por_tipo_total),
+    path("", views.CALCULOFUTURO),
 
 ]
