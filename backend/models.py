@@ -26,7 +26,9 @@ class Investimento(models.Model):
 
     usuario = models.ForeignKey(User, models.CASCADE)
 
-    data_criacao = models.DateTimeField(auto_now=True)
+    start_date = models.DateField(blank=True, null=True)
+    end_date = models.DateField(blank=True, null=True)
+
     ativo = models.BooleanField(default=True)
 
     @property
@@ -81,6 +83,8 @@ class CalculoFuturo(models.Model):
     investimento = models.ForeignKey(Investimento, models.CASCADE)
     variavel = models.ForeignKey(Variavel, models.CASCADE)
     bonus =  models.DecimalField(max_digits=10, decimal_places=6,default=0)
+    soma =  models.DecimalField(max_digits=10, decimal_places=6,default=0)
+
     def __str__(self):
         return (f'{self.investimento.nome}')
 

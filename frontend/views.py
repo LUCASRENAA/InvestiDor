@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.http import HttpResponse
 from django.shortcuts import render
 
@@ -5,7 +7,7 @@ from django.shortcuts import render
 from django.shortcuts import render
 
 from backend.models import Investimento, InvestimentoRendimento, TipoInvestimento, CalculoFuturo, VariavelMes, \
-    VariavelImposto
+    VariavelImposto, TipoRendimento
 
 
 def somar_investimento(usuario,tipo):
@@ -159,44 +161,103 @@ def tipo_de_investimento(request,tipo):
 
 def CALCULOFUTURO(request):
 
-    meses = 12
-    id_objeto = 1
-    resposta,variavel,bonus,total,calculo = calcular_futuro_objeto(id_objeto)
-    print(resposta)
-    total_inicial = total
-    total = resposta  + total
-    for simulacao in range(meses-1):
-        resposta = calcular_futuro_imaginado(total,variavel,bonus )
-        total = resposta + total
-        print(total)
+    for investimento in Investimento.objects.all():
+        print(investimento)
+        try:
+            CalculoFuturo.objects.get(investimento=investimento)
 
-    lucro = total - total_inicial
-    print(lucro)
-    #ainda falta calcular imposto
-    variaveis = VariavelImposto.objects.filter(tipo=calculo.variavel)
-    dias = 12* (30.4167)
-    for pegar_imposto in variaveis:
+            a = investimento.start_date
+            print(a)
+            print("teste")
+            print(a.month)
+            from datetime import date
 
-        if dias > pegar_imposto.dias:
-            imposto = pegar_imposto.valor
-    print(imposto)
+            b = date.today()
+
+            dias = pegar_feriados(a, b)
+            id_objeto = CalculoFuturo.objects.get(investimento=investimento).id
+            resposta, variavel, bonus, total, calculo,soma = calcular_futuro_objeto(id_objeto,a.month)
+            total_inicial = total
+            for dia in dias:
+                print(investimento.nome)
+
+                if investimento.id == 7:
+                    print("aqui")
+                    print(bonus)
+                    print(variavel)
+                    print(total)
+
+                resposta2, variavel2, bonus, total2, calculo2, soma = calcular_futuro_objeto(id_objeto, dia.month)
+
+                resposta_verdadeira = calcular_futuro_imaginado(total, variavel, bonus,soma)/12/(30.4167)/100
+
+                resposta = round(calcular_futuro_imaginado(total, variavel, bonus,soma)/12/(30.4167)/100,6)
+                total = resposta_verdadeira + total
+
+                try:
+                    print(str(InvestimentoRendimento.objects.get(investimento=investimento,data_rendimento__date=dia,tipo=TipoRendimento.objects.get(id=1))))
+
+                except:
+
+                    InvestimentoRendimento.objects.create(investimento=investimento,data_rendimento=dia,valor=resposta,tipo=TipoRendimento.objects.get(id=1))
+
+                print(dia)
+
+        except:
+            continue
 
 
-    lucro = lucro-float(lucro) * (float(imposto) / 100)
 
-    return HttpResponse(str(total_inicial + lucro) + "<p>Lucro: " + str(lucro) +"</p> ")
+        #InvestimentoRendimento.
+
+    return HttpResponse("")
 
 
-def calcular_futuro_objeto(id):
+def calcular_futuro_objeto(id,mes):
     calculo = CalculoFuturo.objects.get(id=id)
 
     total = float(calculo.investimento.valor_atual)
-    variavel = float(VariavelMes.objects.get(id=calculo.variavel.id).valor) / 12 / 100
+
+    aqui = VariavelMes.objects.get(tipo=calculo.variavel, data_criacao__month=int(mes))
+    variavel = float(aqui.valor)
     bonus = float(calculo.bonus)
+    soma = float(calculo.soma)
 
     resposta = round(total * variavel * bonus, 2)
-    return resposta,variavel,bonus,total,calculo
+    return resposta,variavel,bonus,total,calculo,soma
 
-def calcular_futuro_imaginado(total,variavel,bonus):
-    resposta = round(total * variavel * bonus, 2)
+def calcular_futuro_imaginado(total,variavel,bonus,soma):
+    resposta = total * ((variavel+soma) * bonus)/100
     return resposta
+
+
+
+
+def iterdates(date1, date2):
+    import datetime
+    one_day = datetime.timedelta(days = 1)
+    current = date1
+    while current < date2:
+        yield current
+        current += one_day
+
+def pegar_feriados(a,b):
+    import datetime
+    from workalendar.america import Brazil
+    dias_sem_sabado_domingo = []
+    feriados_lista = []
+    cal = Brazil()
+    feriados = cal.holidays(2022)
+
+    for feriado in feriados:
+        feriados_lista.append(feriado[0])
+    for d in iterdates(a, b):
+        if d.weekday() not in (5, 6):
+
+            print(d, d.weekday())
+            if d not in feriados_lista:
+                dias_sem_sabado_domingo.append(d)
+
+    print(len(dias_sem_sabado_domingo))
+
+    return dias_sem_sabado_domingo
